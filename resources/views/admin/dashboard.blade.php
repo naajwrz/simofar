@@ -61,6 +61,29 @@
             <div class="card-body">
                 <h6 class="fw-bold">5 Obat Terlaris</h6>
                 <canvas id="chartTerlaris" height="200"></canvas>
+                @if($terlaris->isNotEmpty())
+                    <div class="mt-3">
+                        @foreach($terlaris as $obatPopuler)
+                            <div class="border-top pt-2 mt-2">
+                                <div class="d-flex justify-content-between gap-2">
+                                    <strong class="small">{{ $obatPopuler->nama_obat }}</strong>
+                                    <span class="small text-muted text-nowrap">
+                                        {{ number_format($obatPopuler->terjual) }} terjual ·
+                                        {{ number_format($obatPopuler->jumlah_pelanggan) }} pelanggan
+                                    </span>
+                                </div>
+                                <div class="small text-muted">
+                                    Indikasi tercatat: {{ $obatPopuler->indikasi ?: 'Belum dicatat.' }}
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">
+                        Indikasi adalah informasi penggunaan obat, bukan diagnosis atau data penyakit pelanggan.
+                    </p>
+                @else
+                    <p class="text-muted small mb-0">Belum ada penjualan lunas.</p>
+                @endif
             </div>
         </div>
     </div>
@@ -113,7 +136,7 @@
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
-                    <tr><th>No. Transaksi</th><th>Tanggal</th><th>Pelanggan</th><th>Total</th><th>Metode</th><th>Status</th></tr>
+                    <tr><th>No. Transaksi</th><th>Tanggal</th><th>Pelanggan</th><th>Obat dalam transaksi</th><th>Total</th><th>Metode</th><th>Status</th></tr>
                 </thead>
                 <tbody>
                     @forelse($transaksiTerbaru as $t)
@@ -121,6 +144,16 @@
                             <td class="fw-semibold">{{ $t->no_transaksi }}</td>
                             <td>{{ \Carbon\Carbon::parse($t->tanggal)->format('d/m/Y H:i') }}</td>
                             <td>{{ $t->pelanggan->nama_pelanggan ?? 'Umum' }}</td>
+                            <td>
+                                @forelse($t->detail as $detail)
+                                    <div>
+                                        {{ $detail->obat->nama_obat ?? 'Obat tidak tersedia' }}
+                                        <span class="text-muted">× {{ $detail->jumlah }}</span>
+                                    </div>
+                                @empty
+                                    <span class="text-muted">Tidak ada rincian obat.</span>
+                                @endforelse
+                            </td>
                             <td>{{ $rp($t->total_tagihan) }}</td>
                             <td class="text-uppercase small">{{ $t->metode_bayar }}</td>
                             <td>
@@ -130,7 +163,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="text-center text-muted py-4">Belum ada transaksi.</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-4">Belum ada transaksi.</td></tr>
                     @endforelse
                 </tbody>
             </table>

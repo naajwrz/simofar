@@ -58,8 +58,8 @@ class DashboardController extends Controller
 
         // 5 obat terlaris
         $terlaris = $this->detailLunas()
-            ->selectRaw('o.nama_obat, SUM(d.jumlah) as terjual')
-            ->groupBy('o.id_obat', 'o.nama_obat')
+            ->selectRaw('o.nama_obat, o.indikasi, SUM(d.jumlah) as terjual, COUNT(DISTINCT p.id_pelanggan) as jumlah_pelanggan')
+            ->groupBy('o.id_obat', 'o.nama_obat', 'o.indikasi')
             ->orderByDesc('terjual')
             ->limit(5)
             ->get();
@@ -93,11 +93,14 @@ class DashboardController extends Controller
         $jumlahApoteker = User::whereHas('role', fn ($q) => $q->whereRaw('LOWER(nama_role) = ?', ['apoteker']))
             ->where('status', 'aktif')->count();
 
-        $transaksiTerbaru = Penjualan::with('pelanggan')->orderByDesc('tanggal')->limit(8)->get();
+        $transaksiTerbaru = Penjualan::with(['pelanggan', 'detail.obat'])
+            ->orderByDesc('tanggal')
+            ->limit(8)
+            ->get();
 
         return view('admin.dashboard', compact(
             'omzetHariIni', 'omzetBulanIni', 'trxBulanIni', 'labaBulanIni', 'modalPengadaan',
-            'labelHarian', 'dataHarian', 'labelTerlaris', 'dataTerlaris',
+            'labelHarian', 'dataHarian', 'labelTerlaris', 'dataTerlaris', 'terlaris',
             'labelSupplier', 'dataSupplier', 'pengadaanTerbaru',
             'stokMenipis', 'hampirED', 'nilaiPersediaan', 'resepMenunggu',
             'jumlahPelanggan', 'jumlahApoteker', 'transaksiTerbaru'
