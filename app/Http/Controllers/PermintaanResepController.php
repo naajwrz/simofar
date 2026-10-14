@@ -27,7 +27,7 @@ class PermintaanResepController extends Controller
     {
         $pelanggan = $this->pelangganLogin();
 
-        $permintaan = Resep::with('detailResep.obat')
+        $permintaan = Resep::with(['detailResep.obat', 'penjualan'])
             ->where('id_pelanggan', $pelanggan->id_pelanggan)
             ->orderByDesc('id_resep')
             ->get();

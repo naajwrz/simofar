@@ -13,8 +13,9 @@ class DummyTransaksiSeeder extends Seeder
         mt_srand(77);
 
         $obats = DB::table('obat')->get();
-        if ($obats->count() < 10) { 
+        if ($obats->count() < 10) {
             $this->command->warn('Jalankan ObatSeeder dulu.');
+
             return;
         }
         $semua = $obats->all();
@@ -22,6 +23,12 @@ class DummyTransaksiSeeder extends Seeder
 
         $suppliers = DB::table('supplier')->where('status_kerjasama', 'aktif')->pluck('id_supplier')->all();
         $pelangganIds = DB::table('pelanggan')->pluck('id_pelanggan')->all();
+
+        if (! $suppliers) {
+            $this->command->error('Tidak ada supplier aktif untuk membuat data pengadaan.');
+
+            return;
+        }
 
         $idPerRole = function (string $role) {
             return DB::table('users')
@@ -41,10 +48,10 @@ class DummyTransaksiSeeder extends Seeder
         DB::table('detail_penjualan')->whereIn('id_penjualan', $lamaJual)->delete();
         DB::table('penjualan')->whereIn('id_penjualan', $lamaJual)->delete();
 
-        // ---------- 12 faktur pengadaan dalam 30 hari terakhir ----------
-        for ($i = 1; $i <= 12; $i++) {
+        // ---------- 20 faktur pengadaan dalam 30 hari terakhir ----------
+        for ($i = 1; $i <= 20; $i++) {
             $id = DB::table('pembelian')->insertGetId([
-                'no_faktur' => 'FKT-D' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                'no_faktur' => 'FKT-D'.str_pad($i, 3, '0', STR_PAD_LEFT),
                 'id_supplier' => $suppliers[array_rand($suppliers)],
                 'id_user' => $apoteker,
                 'tanggal_pengadaan' => now()->subDays(mt_rand(0, 29))->toDateString(),
@@ -70,12 +77,12 @@ class DummyTransaksiSeeder extends Seeder
             DB::table('pembelian')->where('id_pembelian', $id)->update(['total_modal' => $total]);
         }
 
-        // ---------- 70 transaksi penjualan lunas (lebih ramai di hari-hari terakhir) ----------
+        // ---------- 100 transaksi penjualan lunas (lebih ramai di hari-hari terakhir) ----------
         $punyaStatus = Schema::hasColumn('penjualan', 'status_pembayaran');
         $punyaPesanan = Schema::hasColumn('penjualan', 'status_pesanan');
         $punyaWaktuBayar = Schema::hasColumn('penjualan', 'waktu_pembayaran');
 
-        for ($i = 1; $i <= 70; $i++) {
+        for ($i = 1; $i <= 100; $i++) {
             $hariLalu = (int) floor(29 * ((mt_rand(0, 100) / 100) ** 2));
             $waktu = now()->subDays($hariLalu)->setTime(mt_rand(8, 20), mt_rand(0, 59), mt_rand(0, 59));
 
@@ -98,7 +105,7 @@ class DummyTransaksiSeeder extends Seeder
             $bayar = $metode === 'tunai' ? ceil($total / 5000) * 5000 : $total;
 
             $row = [
-                'no_transaksi' => 'TRX-D' . str_pad($i, 4, '0', STR_PAD_LEFT),
+                'no_transaksi' => 'TRX-D'.str_pad($i, 4, '0', STR_PAD_LEFT),
                 'id_user' => $kasir,
                 'id_pelanggan' => (mt_rand(0, 100) < 60 && $pelangganIds) ? $pelangganIds[array_rand($pelangganIds)] : null,
                 'id_resep' => null,
@@ -108,9 +115,15 @@ class DummyTransaksiSeeder extends Seeder
                 'kembalian' => $bayar - $total,
                 'metode_bayar' => $metode,
             ];
-            if ($punyaStatus) { $row['status_pembayaran'] = 'lunas'; }
-            if ($punyaPesanan) { $row['status_pesanan'] = 'selesai'; }
-            if ($punyaWaktuBayar) { $row['waktu_pembayaran'] = $waktu; }
+            if ($punyaStatus) {
+                $row['status_pembayaran'] = 'lunas';
+            }
+            if ($punyaPesanan) {
+                $row['status_pesanan'] = 'selesai';
+            }
+            if ($punyaWaktuBayar) {
+                $row['waktu_pembayaran'] = $waktu;
+            }
 
             $idJual = DB::table('penjualan')->insertGetId($row);
 
@@ -119,6 +132,6 @@ class DummyTransaksiSeeder extends Seeder
             }
         }
 
-        $this->command->info('Selesai: 12 faktur pengadaan dan 70 transaksi penjualan dummy.');
+        $this->command->info('Selesai: 20 faktur pengadaan dan 100 transaksi penjualan, semuanya dengan detail obat.');
     }
 }

@@ -18,8 +18,11 @@
 </head>
 <body>
 <div class="container py-5" style="max-width:650px">
-    <a href="{{ route('katalog.index') }}" class="text-decoration-none pink">
-        <i class="bi bi-arrow-left"></i> Kembali ke katalog
+    <a href="{{ $penjualan->id_resep
+        ? route('pelanggan.permintaan.index')
+        : route('katalog.index') }}" class="text-decoration-none pink">
+        <i class="bi bi-arrow-left"></i>
+        {{ $penjualan->id_resep ? 'Kembali ke permintaan saya' : 'Kembali ke katalog' }}
     </a>
 
     <div class="panel p-4 mt-3">
@@ -97,7 +100,9 @@
         </div>
 
         @if($penjualan->status_pembayaran === 'pending')
-            <form method="POST" action="{{ route('checkout.confirm') }}">
+            <form method="POST" action="{{ $penjualan->id_resep
+                ? route('pelanggan.permintaan.pembayaran.confirm', $penjualan->id_resep)
+                : route('checkout.confirm') }}">
                 @csrf
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox"

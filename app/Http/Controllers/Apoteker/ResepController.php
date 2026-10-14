@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Apoteker;
 
 use App\Http\Controllers\Controller;
+use App\Models\DetailPenjualan;
 use App\Models\DetailResep;
 use App\Models\Obat;
 use App\Models\Pelanggan;
+use App\Models\Penjualan;
 use App\Models\Resep;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Http\JsonResponse;
 
 class ResepController extends Controller
 {
@@ -24,7 +29,10 @@ class ResepController extends Controller
             ->orderBy('id_resep')
             ->get();
 
-        $pelanggans = Pelanggan::orderBy('nama_pelanggan')->get();
+        $pelanggans = Pelanggan::whereHas('user', function ($query) {
+            $query->where('status', 'aktif')
+                ->whereHas('role', fn ($roleQuery) => $roleQuery->whereRaw('LOWER(nama_role) = ?', ['pelanggan']));
+        })->orderBy('nama_pelanggan')->get();
         $obats = Obat::orderBy('nama_obat')->get();
         $noResepBaru = $this->nomorResepBaru();
 
@@ -33,13 +41,27 @@ class ResepController extends Controller
         ));
     }
 
+    public function patients(): JsonResponse
+    {
+        abort_unless(auth()->user()->isApoteker(), 403);
+
+        $pelanggans = Pelanggan::whereHas('user', function ($query) {
+            $query->where('status', 'aktif')
+                ->whereHas('role', fn ($roleQuery) => $roleQuery->whereRaw('LOWER(nama_role) = ?', ['pelanggan']));
+        })
+            ->orderBy('nama_pelanggan')
+            ->get(['id_pelanggan', 'nama_pelanggan']);
+
+        return response()->json($pelanggans);
+    }
+
     // Nomor resep berikutnya yang belum dipakai.
     private function nomorResepBaru(): string
     {
         $n = (int) Resep::max('id_resep') + 1;
 
         do {
-            $kode = 'RSP-' . str_pad($n++, 4, '0', STR_PAD_LEFT);
+            $kode = 'RSP-'.str_pad($n++, 4, '0', STR_PAD_LEFT);
         } while (Resep::where('no_resep', $kode)->exists());
 
         return $kode;
@@ -82,7 +104,8 @@ class ResepController extends Controller
             });
         } catch (\Throwable $e) {
             report($e);
-            return back()->withInput()->with('error', 'Resep gagal disimpan: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Resep gagal disimpan: '.$e->getMessage());
         }
 
         return redirect()->back()->with('success', 'Resep berhasil ditambahkan dan menunggu verifikasi!');
@@ -92,22 +115,116 @@ class ResepController extends Controller
     {
         $request->validate(['status_validasi' => 'required|in:valid,tidak_valid']);
 
-        $resep = Resep::where('status_validasi', 'menunggu')->findOrFail($id);
-        $resep->update(['status_validasi' => $request->status_validasi]);
+        DB::transaction(function () use ($request, $id) {
+            $resep = Resep::where('status_validasi', 'menunggu')
+                ->lockForUpdate()
+                ->findOrFail($id);
 
-        return redirect()->back()->with('success', 'Status validasi resep berhasil diperbarui!');
+            if ($request->status_validasi === 'valid') {
+                $this->buatPesananQris($resep);
+            }
+
+            $resep->update([
+                'status_validasi' => $request->status_validasi,
+                'id_user' => auth()->user()->id_user,
+            ]);
+        });
+
+        $pesan = $request->status_validasi === 'valid'
+            ? 'Resep disetujui. Pelanggan dapat membayar obat melalui QRIS di halaman Permintaan Saya.'
+            : 'Resep ditandai tidak valid.';
+
+        return redirect()->back()->with('success', $pesan);
     }
 
-    // ACC permintaan pelanggan: masuk ke daftar verifikasi resep.
+    // ACC permintaan pelanggan: setujui resep dan siapkan pesanan QRIS.
     public function acc($id)
     {
-        $resep = Resep::where('status_validasi', 'diajukan')->findOrFail($id);
-        $resep->update([
-            'status_validasi' => 'menunggu',
+        DB::transaction(function () use ($id) {
+            $resep = Resep::with('detailResep')
+                ->where('status_validasi', 'diajukan')
+                ->lockForUpdate()
+                ->findOrFail($id);
+
+            $this->buatPesananQris($resep);
+
+            $resep->update([
+                'status_validasi' => 'valid',
+                'id_user' => auth()->user()->id_user,
+            ]);
+        });
+
+        return back()->with('success', 'Resep disetujui. QRIS tersedia di halaman Permintaan Saya milik pelanggan.');
+    }
+
+    private function buatPesananQris(Resep $resep): void
+    {
+        if (Penjualan::where('id_resep', $resep->id_resep)->exists()) {
+            return;
+        }
+
+        $resep->loadMissing('detailResep');
+        if ($resep->detailResep->isEmpty()) {
+            throw ValidationException::withMessages([
+                'resep' => 'Resep tidak memiliki detail obat.',
+            ]);
+        }
+
+        $obatIds = $resep->detailResep->pluck('id_obat')->unique()->sort()->values();
+        $obats = Obat::whereIn('id_obat', $obatIds)
+            ->orderBy('id_obat')
+            ->lockForUpdate()
+            ->get()
+            ->keyBy('id_obat');
+
+        $total = 0;
+        $details = [];
+
+        foreach ($resep->detailResep as $detail) {
+            $obat = $obats->get($detail->id_obat);
+
+            if (
+                ! $obat ||
+                $obat->stok < $detail->jumlah ||
+                ($obat->tanggal_expired &&
+                 $obat->tanggal_expired < today()->toDateString())
+            ) {
+                throw ValidationException::withMessages([
+                    'resep' => 'Stok tidak cukup atau obat kedaluwarsa: '
+                        .($obat->nama_obat ?? 'obat tidak ditemukan').'.',
+                ]);
+            }
+
+            $harga = (float) $obat->harga_jual;
+            $subtotal = $harga * $detail->jumlah;
+            $total += $subtotal;
+            $details[] = [
+                'id_obat' => $obat->id_obat,
+                'jumlah' => $detail->jumlah,
+                'harga_satuan' => $harga,
+                'subtotal' => $subtotal,
+            ];
+        }
+
+        $penjualan = Penjualan::create([
+            'no_transaksi' => 'SF'.now()->format('ymdHis')
+                .Str::upper(Str::random(3)),
             'id_user' => auth()->user()->id_user,
+            'id_pelanggan' => $resep->id_pelanggan,
+            'id_resep' => $resep->id_resep,
+            'tanggal' => now(),
+            'total_tagihan' => $total,
+            'bayar' => 0,
+            'kembalian' => 0,
+            'metode_bayar' => 'qris',
+            'status_pembayaran' => 'pending',
+            'status_pesanan' => 'menunggu_pembayaran',
         ]);
 
-        return back()->with('success', 'Permintaan diterima dan masuk ke daftar verifikasi resep.');
+        foreach ($details as $detail) {
+            $detail['id_penjualan'] = $penjualan->id_penjualan;
+            DetailPenjualan::create($detail);
+        }
     }
 
     public function tolakPermintaan($id)

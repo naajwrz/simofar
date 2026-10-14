@@ -140,6 +140,14 @@ class CheckoutController extends Controller
         return view('katalog.pembayaran', compact('penjualan'));
     }
 
+    // Menampilkan QRIS untuk resep yang disetujui, hanya kepada pemilik resep.
+    public function showPrescriptionPayment($id)
+    {
+        $penjualan = $this->prescriptionSaleForCustomer($id);
+
+        return view('katalog.pembayaran', compact('penjualan'));
+    }
+
     // Konfirmasi pembayaran simulasi.
     public function confirm(Request $request)
     {
@@ -151,6 +159,41 @@ class CheckoutController extends Controller
 
         abort_unless($id, 404);
 
+        $this->confirmSale($id);
+
+        return redirect()
+            ->route('checkout.show')
+            ->with('success', 'Pembayaran simulasi berhasil dikonfirmasi.');
+    }
+
+    public function confirmPrescriptionPayment(Request $request, $id)
+    {
+        $request->validate([
+            'konfirmasi' => 'accepted',
+        ]);
+
+        $penjualan = $this->prescriptionSaleForCustomer($id);
+        $this->confirmSale($penjualan->id_penjualan);
+
+        return redirect()
+            ->route('pelanggan.permintaan.pembayaran', $id)
+            ->with('success', 'Pembayaran simulasi berhasil dikonfirmasi.');
+    }
+
+    private function prescriptionSaleForCustomer($id): Penjualan
+    {
+        abort_unless(auth()->user()->isPelanggan(), 403);
+
+        $pelanggan = Pelanggan::where('id_user', auth()->id())->firstOrFail();
+
+        return Penjualan::with(['detail.obat', 'pelanggan'])
+            ->where('id_resep', $id)
+            ->where('id_pelanggan', $pelanggan->id_pelanggan)
+            ->firstOrFail();
+    }
+
+    private function confirmSale($id): void
+    {
         DB::transaction(function () use ($id) {
             $penjualan = Penjualan::where('id_penjualan', $id)
                 ->lockForUpdate()
@@ -221,9 +264,5 @@ class CheckoutController extends Controller
                 'waktu_pembayaran' => now(),
             ]);
         });
-
-        return redirect()
-            ->route('checkout.show')
-            ->with('success', 'Pembayaran simulasi berhasil dikonfirmasi.');
     }
 }

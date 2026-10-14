@@ -318,23 +318,29 @@
                                 Pasien
                             </label>
 
-                            <select name="id_pelanggan"
-                                    class="form-select"
-                                    required>
-
-                                <option value="">
-                                    -- Pilih Pasien --
-                                </option>
-
-                                @foreach($pelanggans as $pelanggan)
-
-                                    <option value="{{ $pelanggan->id_pelanggan }}">
-                                        {{ $pelanggan->nama_pelanggan }}
-                                    </option>
-
-                                @endforeach
-
-                            </select>
+                            <div class="input-group">
+                                <select name="id_pelanggan"
+                                        id="pasienResep"
+                                        class="form-select"
+                                        data-pasien-url="{{ route('apoteker.resep.pasien') }}"
+                                        required>
+                                    <option value="">-- Pilih Pasien --</option>
+                                    @foreach($pelanggans as $pelanggan)
+                                        <option value="{{ $pelanggan->id_pelanggan }}"
+                                            @selected(old('id_pelanggan') == $pelanggan->id_pelanggan)>
+                                            {{ $pelanggan->nama_pelanggan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary"
+                                        id="refreshPasien" title="Muat ulang daftar pasien"
+                                        aria-label="Muat ulang daftar pasien">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <div id="statusPasien" class="form-text" aria-live="polite">
+                                Daftar pasien diperbarui saat formulir dibuka.
+                            </div>
                         </div>
 
                         <div class="col-md-6 mb-3">
@@ -459,6 +465,64 @@
 </div>
 <script>
     let obatIndex = 1;
+
+    const pasienSelect = document.getElementById('pasienResep');
+    const refreshPasienButton = document.getElementById('refreshPasien');
+    const statusPasien = document.getElementById('statusPasien');
+    const modalTambahResep = document.getElementById('modalTambahResep');
+    let pasienRefreshTimer;
+
+    async function refreshDaftarPasien() {
+        if (refreshPasienButton.disabled) {
+            return;
+        }
+
+        const selectedPasien = pasienSelect.value;
+        refreshPasienButton.disabled = true;
+        refreshPasienButton.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>';
+        statusPasien.textContent = 'Memuat daftar pasien...';
+        statusPasien.classList.remove('text-danger');
+
+        try {
+            const response = await fetch(pasienSelect.dataset.pasienUrl, {
+                headers: { Accept: 'application/json' },
+                cache: 'no-store',
+            });
+
+            if (!response.ok) {
+                throw new Error('Daftar pasien gagal dimuat. Coba muat ulang lagi.');
+            }
+
+            const pelanggans = await response.json();
+            pasienSelect.replaceChildren(new Option('-- Pilih Pasien --', ''));
+
+            pelanggans.forEach(pelanggan => {
+                pasienSelect.add(new Option(pelanggan.nama_pelanggan, pelanggan.id_pelanggan));
+            });
+
+            if (pelanggans.some(pelanggan => String(pelanggan.id_pelanggan) === selectedPasien)) {
+                pasienSelect.value = selectedPasien;
+            }
+
+            statusPasien.textContent = `${pelanggans.length} pasien aktif. Daftar diperbarui.`;
+            statusPasien.classList.remove('text-danger');
+        } catch (error) {
+            statusPasien.textContent = `Gagal memuat daftar pasien: ${error.message}`;
+            statusPasien.classList.add('text-danger');
+        } finally {
+            refreshPasienButton.disabled = false;
+            refreshPasienButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+        }
+    }
+
+    refreshPasienButton.addEventListener('click', refreshDaftarPasien);
+    modalTambahResep.addEventListener('show.bs.modal', refreshDaftarPasien);
+    modalTambahResep.addEventListener('shown.bs.modal', () => {
+        pasienRefreshTimer = window.setInterval(refreshDaftarPasien, 15000);
+    });
+    modalTambahResep.addEventListener('hidden.bs.modal', () => {
+        window.clearInterval(pasienRefreshTimer);
+    });
 
     document.getElementById('btnTambahObat').addEventListener('click', function () {
 

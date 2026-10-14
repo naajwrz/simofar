@@ -17,7 +17,7 @@
     $label = [
         'diajukan' => ['Menunggu persetujuan apoteker', 'warning'],
         'menunggu' => ['Sedang diverifikasi apoteker', 'info'],
-        'valid' => ['Resep valid', 'success'],
+        'valid' => ['Disetujui apoteker', 'success'],
         'tidak_valid' => ['Ditolak / tidak valid', 'danger'],
         'terpakai' => ['Sudah dipakai', 'secondary'],
     ];
@@ -30,6 +30,12 @@
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+    @if($errors->any())
+        <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
 
     @forelse($permintaan as $r)
@@ -50,6 +56,27 @@
                     <span class="small text-secondary">{{ $d->aturan_pakai }}</span>
                 </div>
             @endforeach
+            @if($r->status_validasi === 'valid' && $r->penjualan)
+                <div class="border-top mt-3 pt-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    @if($r->penjualan->status_pembayaran === 'pending')
+                        <span class="small text-secondary">
+                            Total: <strong>Rp{{ number_format($r->penjualan->total_tagihan, 0, ',', '.') }}</strong>
+                        </span>
+                        <a href="{{ route('pelanggan.permintaan.pembayaran', $r->id_resep) }}"
+                           class="btn btn-sm btn-primary rounded-pill px-3">
+                            <i class="bi bi-qr-code me-1"></i> Bayar dengan QRIS
+                        </a>
+                    @else
+                        <span class="badge text-bg-success">
+                            <i class="bi bi-check-circle me-1"></i> Sudah dibayar
+                        </span>
+                        <a href="{{ route('pelanggan.permintaan.pembayaran', $r->id_resep) }}"
+                           class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                            Lihat transaksi
+                        </a>
+                    @endif
+                </div>
+            @endif
         </div>
     @empty
         <div class="panel p-5 text-center text-secondary">

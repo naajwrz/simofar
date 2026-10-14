@@ -32,6 +32,7 @@
         <div class="collapse navbar-collapse" id="navAdmin">
             <ul class="navbar-nav me-auto gap-lg-1">
                 <li class="nav-item"><a class="nav-link {{ $rute === 'admin.dashboard' ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link {{ str_starts_with($rute, 'admin.keuangan') ? 'active' : '' }}" href="{{ route('admin.keuangan') }}">Keuangan</a></li>
                 <li class="nav-item"><a class="nav-link {{ str_starts_with($rute, 'admin.apoteker') ? 'active' : '' }}" href="{{ route('admin.apoteker.index') }}">Apoteker</a></li>
                 <li class="nav-item"><a class="nav-link {{ str_starts_with($rute, 'admin.pelanggan') ? 'active' : '' }}" href="{{ route('admin.pelanggan.index') }}">Pelanggan</a></li>
                 <li class="nav-item"><a class="nav-link {{ $rute === 'admin.diagram' ? 'active' : '' }}" href="{{ route('admin.diagram') }}">Diagram Sistem</a></li>

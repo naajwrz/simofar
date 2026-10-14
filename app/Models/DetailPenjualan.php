@@ -13,6 +13,6 @@ class DetailPenjualan extends Model
 
     public function obat()
     {
-        return $this->belongsTo(Obat::class, 'id_obat', 'id_obat');
+        return $this->belongsTo(Obat::class, 'id_obat', 'id_obat')->withTrashed();
     }
 }

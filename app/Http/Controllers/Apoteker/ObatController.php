@@ -83,4 +83,16 @@ class ObatController extends Controller
 
         return redirect()->back()->with('success', 'Stok dan tanggal kadaluarsa ' . $obat->nama_obat . ' berhasil diperbarui!');
     }
+
+    public function destroy($id)
+    {
+        $obat = Obat::findOrFail($id);
+        $namaObat = $obat->nama_obat;
+        $obat->delete();
+
+        return redirect()->route('apoteker.obat.index')->with(
+            'success',
+            "Obat {$namaObat} berhasil dihapus dari daftar. Riwayat transaksi tetap tersimpan."
+        );
+    }
 }

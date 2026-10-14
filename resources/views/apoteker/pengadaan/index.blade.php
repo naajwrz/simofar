@@ -74,6 +74,15 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show">
+            <strong>Pengadaan gagal disimpan:</strong>
+            {{ session('error') }}
+            <button type="button" class="btn-close"
+                    data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     @if($errors->any())
         <div class="alert alert-danger alert-dismissible fade show">
             <strong>Data belum berhasil disimpan:</strong>
@@ -99,37 +108,37 @@
                             <tr>
                                 <th class="ps-3 py-3">No. Faktur</th>
                                 <th class="py-3">Supplier</th>
-                                <th class="py-3">Tanggal Pengadaan</th>
-                                <td>
-    <ul class="list-unstyled mb-0 small">
-        @foreach($pembelian->details as $d)
-            <li>
-                <i class="bi bi-capsule text-pink me-1"></i>
-                <strong>{{ $d->obat->nama_obat ?? 'Obat dihapus' }}</strong>
-                × {{ $d->jumlah }} @ Rp{{ number_format($d->harga_beli, 0, ',', '.') }}
-            </li>
-        @endforeach
-    </ul>
-</td>
+                                <th class="py-3">Tanggal</th>
+                                <th class="py-3">Detail Obat</th>
                                 <th class="py-3">Total Biaya</th>
                                 <th class="py-3">Petugas</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($pembelianList as $pembelian)
+                            @forelse ($pembelianList as $pembelian)
                                 <tr>
-                                    <td class="ps-3 fw-bold text-pink">{{ $pembelian->no_faktur ?? $pembelian->id_pembelian }}</td>
+                                    <td class="ps-3">{{ $pembelian->no_faktur }}</td>
                                     <td>{{ $pembelian->supplier->nama_supplier ?? '-' }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($pembelian->tanggal_pengadaan)->format('d/m/Y') }}</td>
-                                    <td class="fw-semibold">Rp {{ number_format($pembelian->total_modal ?? 0, 0, ',', '.') }}</td>
-                                    <td>{{ $pembelian->user->nama_staf ?? '-' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($pembelian->tanggal_pengadaan)->translatedFormat('d M Y') }}</td>
+                                    <td>
+                                        <ul class="list-unstyled mb-0 small">
+                                            @forelse ($pembelian->details as $d)
+                                                <li>
+                                                    <strong>{{ $d->obat->nama_obat ?? 'Obat dihapus' }}</strong>
+                                                    × {{ $d->jumlah }}
+                                                    @ Rp{{ number_format($d->harga_beli, 0, ',', '.') }}
+                                                </li>
+                                            @empty
+                                                <li>Tidak ada detail pembelian.</li>
+                                            @endforelse
+                                        </ul>
+                                    </td>
+                                    <td>Rp{{ number_format($pembelian->total_modal ?? 0, 0, ',', '.') }}</td>
+                                    <td>{{ $pembelian->user->nama_staf ?? 'Petugas' }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">
-                                        <i class="bi bi-inbox fs-3 text-pink d-block mb-2"></i>
-                                        Belum ada data pengadaan obat.
-                                    </td>
+                                    <td colspan="6" class="text-center py-4 text-muted">Belum ada data pengadaan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -227,19 +236,35 @@
                 @csrf
 
                 <div class="modal-body">
+                    @if(session('error') || $errors->any())
+                        <div class="alert alert-danger">
+                            <strong>Pengadaan belum berhasil disimpan:</strong>
+                            @if(session('error'))
+                                {{ session('error') }}
+                            @endif
+                            @if($errors->any())
+                                <ul class="mb-0 mt-2">
+                                    @foreach($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </div>
+                    @endif
+
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Nomor Faktur</label>
                             <input type="text" name="no_faktur"
                                    class="form-control"
-                                  value="{{ old('no_faktur', $noFakturBaru) }}" required>
+                                   value="{{ old('no_faktur', $noFakturBaru) }}" required>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">Tanggal Pengadaan</label>
                             <input type="date" name="tanggal_pengadaan"
                                    class="form-control"
-                                   value="{{ date('Y-m-d') }}" required>
+                                   value="{{ old('tanggal_pengadaan', date('Y-m-d')) }}" required>
                         </div>
 
                         <div class="col-12">
@@ -247,7 +272,8 @@
                             <select name="id_supplier" class="form-select" required>
                                 <option value="">-- Pilih Supplier --</option>
                                 @foreach($suppliers as $supplier)
-                                    <option value="{{ $supplier->id_supplier }}">
+                                    <option value="{{ $supplier->id_supplier }}"
+                                        @selected(old('id_supplier') == $supplier->id_supplier)>
                                         {{ $supplier->kode_supplier }} -
                                         {{ $supplier->nama_supplier }}
                                     </option>
@@ -258,31 +284,83 @@
 
                     <hr class="my-4">
 
-                  <h6 class="fw-bold mb-3">Detail Obat</h6>
-<div id="itemPengadaan">
-    <div class="row g-2 item-row mb-2">
-        <div class="col-md-6">
-            <select name="items[0][id_obat]" class="form-select" required>
-                <option value="">-- Pilih Obat --</option>
-                @foreach($obats as $obat)
-                    <option value="{{ $obat->id_obat }}">{{ $obat->nama_obat }} (Stok: {{ $obat->stok }})</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input type="number" name="items[0][jumlah]" class="form-control" min="1" placeholder="Jumlah" required>
-        </div>
-        <div class="col-md-3">
-            <input type="number" name="items[0][harga_beli]" class="form-control" min="0" step="0.01" placeholder="Harga beli" required>
-        </div>
-        <div class="col-md-1"></div>
-    </div>
-</div>
-<button type="button" id="tambahItem" class="btn btn-sm btn-outline-pink rounded-pill">
-    <i class="bi bi-plus-lg"></i> Tambah Obat
-</button>
-                        <i class="bi bi-info-circle me-1 text-pink"></i>
-                        Stok obat akan bertambah setelah transaksi berhasil disimpan.
+                    <h6 class="fw-bold mb-3">Detail Obat</h6>
+                    <div id="itemPengadaan">
+                        @php($oldItems = old('items', [[]]))
+                        @foreach($oldItems as $index => $oldItem)
+                            <div class="row g-2 item-row mb-2">
+                                <div class="col-md-6">
+                                    <select name="items[{{ $index }}][id_obat]" class="form-select" required>
+                                        <option value="">-- Pilih Obat --</option>
+                                        @foreach($obats as $obat)
+                                            <option value="{{ $obat->id_obat }}"
+                                                @selected(($oldItem['id_obat'] ?? '') == $obat->id_obat)>
+                                                {{ $obat->nama_obat }} (Stok: {{ $obat->stok }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" name="items[{{ $index }}][jumlah]"
+                                           class="form-control" min="1" placeholder="Jumlah"
+                                           value="{{ $oldItem['jumlah'] ?? '' }}" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" name="items[{{ $index }}][harga_beli]"
+                                           class="form-control" min="0" step="0.01"
+                                           placeholder="Harga beli"
+                                           value="{{ $oldItem['harga_beli'] ?? '' }}" required>
+                                </div>
+                                <div class="col-md-1">
+                                    @if($index > 0)
+                                        <button type="button" class="btn btn-outline-danger btn-hapus-item"
+                                                aria-label="Hapus obat">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <template id="templateItemPengadaan">
+                        <div class="row g-2 item-row mb-2">
+                            <div class="col-md-6">
+                                <select class="form-select" data-field="id_obat" required>
+                                    <option value="">-- Pilih Obat --</option>
+                                    @foreach($obats as $obat)
+                                        <option value="{{ $obat->id_obat }}">
+                                            {{ $obat->nama_obat }} (Stok: {{ $obat->stok }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control" data-field="jumlah"
+                                       min="1" placeholder="Jumlah" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" data-field="harga_beli"
+                                       min="0" step="0.01" placeholder="Harga beli" required>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-outline-danger btn-hapus-item"
+                                        aria-label="Hapus obat">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+                        <button type="button" id="tambahItem"
+                                class="btn btn-sm btn-outline-pink rounded-pill">
+                            <i class="bi bi-plus-lg"></i> Tambah Obat
+                        </button>
+                        <span class="small text-muted">
+                            <i class="bi bi-info-circle me-1 text-pink"></i>
+                            Stok obat bertambah setelah transaksi berhasil disimpan.
+                        </span>
                     </div>
                 </div>
 
@@ -336,35 +414,24 @@
         </div>
     </footer>
     <script>
-    let idxItem = 1;
-    document.getElementById('tambahItem').addEventListener('click', () => {
-        const row = document.createElement('div');
-        row.className = 'row g-2 item-row mb-2';
-        row.innerHTML = `
-            <div class="col-md-6">
-                <select name="items[${idxItem}][id_obat]" class="form-select" required>
-                    <option value="">-- Pilih Obat --</option>
-                    @foreach($obats as $obat)
-                        <option value="{{ $obat->id_obat }}">{{ $obat->nama_obat }} (Stok: {{ $obat->stok }})</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2">
-                <input type="number" name="items[${idxItem}][jumlah]" class="form-control" min="1" placeholder="Jumlah" required>
-            </div>
-            <div class="col-md-3">
-                <input type="number" name="items[${idxItem}][harga_beli]" class="form-control" min="0" step="0.01" placeholder="Harga beli" required>
-            </div>
-            <div class="col-md-1">
-                <button type="button" class="btn btn-outline-danger btn-hapus-item"><i class="bi bi-trash"></i></button>
-            </div>`;
-        document.getElementById('itemPengadaan').appendChild(row);
+    const itemContainer = document.getElementById('itemPengadaan');
+    const itemTemplate = document.getElementById('templateItemPengadaan');
+    const addItemButton = document.getElementById('tambahItem');
+    let idxItem = itemContainer.querySelectorAll('.item-row').length;
+
+    addItemButton.addEventListener('click', () => {
+        const row = itemTemplate.content.firstElementChild.cloneNode(true);
+        row.querySelector('[data-field="id_obat"]').name = `items[${idxItem}][id_obat]`;
+        row.querySelector('[data-field="jumlah"]').name = `items[${idxItem}][jumlah]`;
+        row.querySelector('[data-field="harga_beli"]').name = `items[${idxItem}][harga_beli]`;
+        itemContainer.appendChild(row);
         idxItem++;
     });
 
-    document.addEventListener('click', e => {
-        const tombol = e.target.closest('.btn-hapus-item');
-        if (tombol) tombol.closest('.item-row').remove();
+    itemContainer.addEventListener('click', event => {
+        if (!(event.target instanceof Element)) return;
+        const removeButton = event.target.closest('.btn-hapus-item');
+        if (removeButton) removeButton.closest('.item-row').remove();
     });
 
     @if($errors->any() || session('error'))

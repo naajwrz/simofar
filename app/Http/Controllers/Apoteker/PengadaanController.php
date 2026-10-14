@@ -106,6 +106,7 @@ class PengadaanController extends Controller
             return back()->withInput()->with('error', 'Pengadaan gagal disimpan: ' . $e->getMessage());
         }
 
-        return redirect()->back()->with('success', 'Pengadaan berhasil disimpan dan stok obat bertambah!');
+        return redirect()->route('apoteker.pengadaan.index')
+            ->with('success', 'Pengadaan berhasil disimpan dan stok obat bertambah!');
     }
 }

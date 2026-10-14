@@ -3,6 +3,7 @@
 use App\Http\Controllers\PermintaanResepController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ApotekerController as AdminApotekerController;
+use App\Http\Controllers\Admin\KeuanganController as AdminKeuanganController;
 use App\Http\Controllers\Admin\PelangganController as AdminPelangganController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -79,9 +80,11 @@ Route::middleware(['auth'])->prefix('apoteker')->name('apoteker.')->group(functi
     Route::post('/obat', [ObatController::class, 'storeObat'])->name('obat.store');
     Route::post('/kategori', [ObatController::class, 'storeKategori'])->name('kategori.store');
     Route::put('/obat/{id}', [ObatController::class, 'update'])->name('obat.update');
+    Route::delete('/obat/{id}', [ObatController::class, 'destroy'])->name('obat.destroy');
 
     // Modul Resep
     Route::get('/resep', [ResepController::class, 'index'])->name('resep.index');
+    Route::get('/resep/pasien', [ResepController::class, 'patients'])->name('resep.pasien');
     Route::post('/resep', [ResepController::class, 'store'])->name('resep.store');
     Route::post('/resep/{id}/verifikasi', [ResepController::class, 'verifikasi'])->name('resep.verifikasi');
     Route::post('/resep/{id}/acc', [ResepController::class, 'acc'])->name('resep.acc');
@@ -103,12 +106,18 @@ Route::middleware(['auth'])->prefix('apoteker')->name('apoteker.')->group(functi
 Route::middleware('auth')->prefix('pelanggan')->name('pelanggan.')->group(function () {
     Route::get('/permintaan', [PermintaanResepController::class, 'index'])->name('permintaan.index');
     Route::post('/permintaan', [PermintaanResepController::class, 'store'])->name('permintaan.store');
+    Route::get('/permintaan/{id}/pembayaran', [CheckoutController::class, 'showPrescriptionPayment'])
+        ->name('permintaan.pembayaran');
+    Route::post('/permintaan/{id}/pembayaran', [CheckoutController::class, 'confirmPrescriptionPayment'])
+        ->name('permintaan.pembayaran.confirm');
 });
 
 // Admin
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/diagram', [AdminDashboardController::class, 'diagram'])->name('diagram');
+    Route::get('/keuangan', [AdminKeuanganController::class, 'index'])->name('keuangan');
+    Route::post('/keuangan', [AdminKeuanganController::class, 'save'])->name('keuangan.save');
 
     Route::get('/apoteker', [AdminApotekerController::class, 'index'])->name('apoteker.index');
     Route::post('/apoteker', [AdminApotekerController::class, 'store'])->name('apoteker.store');

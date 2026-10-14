@@ -10,19 +10,42 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Buat Role Apoteker jika belum ada
-        $roleId = DB::table('roles')->insertGetId([
-            'nama_role' => 'Apoteker',
-            'deskripsi' => 'Pengelola obat dan verifikasi resep'
-        ]);
+        $accounts = [
+            'apoteker' => [
+                'role' => 'Apoteker',
+                'deskripsi' => 'Pengelola obat dan verifikasi resep',
+                'nama_staf' => 'Najwa Apoteker',
+                'email' => 'apoteker@simofar.com',
+            ],
+            'kasir' => [
+                'role' => 'Kasir',
+                'deskripsi' => 'Petugas transaksi penjualan',
+                'nama_staf' => 'Kasir SIMOFAR',
+                'email' => 'kasir@simofar.com',
+            ],
+        ];
 
-        // 2. Buat Akun Apoteker
-        DB::table('users')->insert([
-            'id_role'   => $roleId,
-            'nama_staf' => 'Najwa Apoteker',
-            'email'     => 'apoteker@simofar.com',
-            'password'  => Hash::make('password123'),
-            'status'    => 'aktif',
-        ]);
+        foreach ($accounts as $account) {
+            $roleId = DB::table('roles')
+                ->whereRaw('LOWER(nama_role) = ?', [strtolower($account['role'])])
+                ->value('id_role');
+
+            if (! $roleId) {
+                $roleId = DB::table('roles')->insertGetId([
+                    'nama_role' => $account['role'],
+                    'deskripsi' => $account['deskripsi'],
+                ]);
+            }
+
+            DB::table('users')->updateOrInsert(
+                ['email' => $account['email']],
+                [
+                    'id_role' => $roleId,
+                    'nama_staf' => $account['nama_staf'],
+                    'password' => Hash::make('password123'),
+                    'status' => 'aktif',
+                ]
+            );
+        }
     }
 }

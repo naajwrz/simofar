@@ -43,4 +43,13 @@ class Resep extends Model
             'id_resep'
         );
     }
+
+    public function penjualan()
+    {
+        return $this->hasOne(
+            Penjualan::class,
+            'id_resep',
+            'id_resep'
+        );
+    }
 }

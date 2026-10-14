@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -10,7 +9,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-       
 :root {
     --primary: #F4A6BB;
     --primary-dark: #D96C91;
@@ -43,6 +41,10 @@ body {
 }
 
 .text-primary-custom {
+    color: var(--primary-dark) !important;
+}
+
+.text-pink {
     color: var(--primary-dark) !important;
 }
 
@@ -168,7 +170,6 @@ footer {
         display: none;
     }
 }
-
     </style>
 </head>
 
@@ -191,13 +192,6 @@ footer {
                 <span class="d-none d-sm-inline">Keranjang</span>
                 <span class="cart-count ms-1" id="cartCount">0</span>
             </button>
-
-           <a href="{{ route('login') }}" class="btn btn-primary-custom rounded-pill px-3">
-                <i class="bi bi-person me-1"></i>
-                <span class="d-none d-sm-inline">Login Staf</span>
-                <span class="d-sm-none">Login</span>
-            </a>
-            --> <!-- (Bagian lama di atas sudah diganti dengan kode di bawah ini) -->
 
             @auth
                 @if(auth()->user()->isPelanggan())
@@ -223,8 +217,8 @@ footer {
 
 <main class="container py-4 py-lg-5">
     @if(session('error'))
-    <div class="alert alert-danger">{{ session('error') }}</div>
-@endif
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
     @if($errors->any())
         <div class="alert alert-danger">{{ $errors->first() }}</div>
     @endif
@@ -310,18 +304,19 @@ footer {
                     </button>
                 </div>
             </form>
+
             <div class="d-flex flex-wrap gap-2 mt-3">
-    <a href="{{ route('katalog.index', request()->except('kategori')) }}"
-       class="btn btn-sm rounded-pill {{ request('kategori') ? 'btn-outline-secondary' : 'btn-primary-custom' }}">
-        Semua
-    </a>
-    @foreach($kategoris as $k)
-        <a href="{{ route('katalog.index', array_merge(request()->except('kategori'), ['kategori' => $k->id_kategori])) }}"
-           class="btn btn-sm rounded-pill {{ request('kategori') == $k->id_kategori ? 'btn-primary-custom' : 'btn-outline-secondary' }}">
-            {{ $k->nama_kategori }}
-        </a>
-    @endforeach
-</div>
+                <a href="{{ route('katalog.index', request()->except('kategori')) }}"
+                   class="btn btn-sm rounded-pill {{ request('kategori') ? 'btn-outline-secondary' : 'btn-primary-custom' }}">
+                    Semua
+                </a>
+                @foreach($kategoris as $k)
+                    <a href="{{ route('katalog.index', array_merge(request()->except('kategori'), ['kategori' => $k->id_kategori])) }}"
+                       class="btn btn-sm rounded-pill {{ request('kategori') == $k->id_kategori ? 'btn-primary-custom' : 'btn-outline-secondary' }}">
+                        {{ $k->nama_kategori }}
+                    </a>
+                @endforeach
+            </div>
         </div>
 
         <div class="row g-3 g-lg-4">
@@ -393,8 +388,10 @@ footer {
                                     <button
                                         type="button"
                                         class="btn btn-outline-danger btn-sm"
+                                        data-prescription-trigger
                                         data-bs-toggle="modal"
                                         data-bs-target="#prescriptionModal"
+                                        data-id="{{ $o->id_obat }}"
                                         data-name="{{ $o->nama_obat }}"
                                     >
                                         <i class="bi bi-file-earmark-medical me-1"></i>
@@ -435,10 +432,42 @@ footer {
     </section>
 </main>
 
-<footer class="border-top mt-5 py-4">
-    <div class="container d-flex flex-wrap justify-content-between gap-2">
-        <strong><i class="bi bi-capsule-pill text-primary-custom me-1"></i> SIMOFAR Pharmacy</strong>
-        <small class="muted">Informasi obat dan layanan kesehatan.</small>
+<!-- ================= FOOTER ================= -->
+<footer class="bg-white border-top mt-5 py-4">
+    <div class="container">
+        <div class="row gy-4">
+            <!-- Col 1: Logo & Info Singkat -->
+            <div class="col-md-5">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="bi bi-capsule-pill fs-3 text-pink me-2"></i>
+                    <h5 class="fw-bold mb-0 text-dark">SIMOFAR</h5>
+                </div>
+                <p class="text-muted small mb-2">
+                    Sistem Informasi Manajemen Obat &amp; Farmasi Terpadu untuk mengoptimalkan pengelolaan stok, resep, dan pengadaan obat secara akurat.
+                </p>
+                <small class="text-muted d-block">&copy; 2026 SIMOFAR. All Rights Reserved.</small>
+            </div>
+
+            <!-- Col 2: Kontak -->
+            <div class="col-md-4">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-headset text-pink me-2"></i>Kontak Support &amp; Admin</h6>
+                <ul class="list-unstyled text-muted small lh-lg mb-0">
+                    <li><i class="bi bi-envelope me-2 text-pink"></i> admin.simofar@uin-malang.ac.id</li>
+                    <li><i class="bi bi-telephone me-2 text-pink"></i> +62 812-3456-7890 (Helpdesk)</li>
+                    <li><i class="bi bi-geo-alt me-2 text-pink"></i> Gedung Lab. Komputer, UIN Maulana Malik Ibrahim Malang</li>
+                </ul>
+            </div>
+
+            <!-- Col 3: Tim Pengembang -->
+            <div class="col-md-3">
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-code-slash text-pink me-2"></i>Tim Pengembang</h6>
+                <ul class="list-unstyled text-muted small lh-lg mb-0">
+                    <li><i class="bi bi-person-circle me-2 text-pink"></i> Najwarizqa Aryandri</li>
+                    <li><i class="bi bi-person-circle me-2 text-pink"></i> Aldza Salwatul</li>
+                    <li class="mt-1 text-pink fw-semibold"><i class="bi bi-building me-2"></i> UIN Maulana Malik Ibrahim Malang</li>
+                </ul>
+            </div>
+        </div>
     </div>
 </footer>
 
@@ -513,7 +542,87 @@ footer {
     </div>
 </div>
 
-data-id="{{ $o->id_obat }}"
+<!-- Modal Obat Keras / Perlu Resep -->
+<div class="modal fade" id="prescriptionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0">
+                <h2 class="modal-title fs-5 fw-bold">Obat Keras: Perlu Resep</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                        aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <p>
+                    <strong id="prescriptionName">-</strong>
+                    termasuk obat keras. Isi data resep untuk mengajukan permintaan kepada apoteker.
+                </p>
+                @auth
+                    @if(auth()->user()->isPelanggan())
+                        <form action="{{ route('pelanggan.permintaan.store') }}" method="POST"
+                              enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" name="id_obat" id="prescriptionObatId"
+                                   value="{{ old('id_obat') }}">
+
+                            <div class="mb-3">
+                                <label for="prescriptionJumlah" class="form-label">Jumlah obat</label>
+                                <input type="number" name="jumlah" id="prescriptionJumlah"
+                                       class="form-control" min="1" max="100"
+                                       value="{{ old('jumlah', 1) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="prescriptionDokter" class="form-label">Nama dokter</label>
+                                <input type="text" name="nama_dokter" id="prescriptionDokter"
+                                       class="form-control" maxlength="100"
+                                       value="{{ old('nama_dokter') }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="prescriptionTanggal" class="form-label">Tanggal resep</label>
+                                <input type="date" name="tanggal_terbit" id="prescriptionTanggal"
+                                       class="form-control" max="{{ now()->toDateString() }}"
+                                       value="{{ old('tanggal_terbit', now()->toDateString()) }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="prescriptionAturan" class="form-label">Aturan pakai (jika ada)</label>
+                                <input type="text" name="aturan_pakai" id="prescriptionAturan"
+                                       class="form-control" maxlength="100"
+                                       value="{{ old('aturan_pakai') }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="prescriptionCatatan" class="form-label">Catatan untuk apoteker (opsional)</label>
+                                <textarea name="catatan_pelanggan" id="prescriptionCatatan"
+                                          class="form-control" rows="2" maxlength="500">{{ old('catatan_pelanggan') }}</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="prescriptionFoto" class="form-label">Foto resep (opsional)</label>
+                                <input type="file" name="foto_resep" id="prescriptionFoto"
+                                       class="form-control" accept=".jpg,.jpeg,.png,.webp">
+                                <div class="form-text">JPG, PNG, atau WEBP; ukuran maksimal 2 MB.</div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary-custom w-100">
+                                Ajukan Permintaan dengan Resep
+                            </button>
+                        </form>
+                    @else
+                        <div class="alert alert-info mb-0">
+                            Silakan login menggunakan akun pelanggan untuk mengajukan resep.
+                        </div>
+                    @endif
+                @else
+                    <a href="{{ route('login') }}" class="btn btn-primary-custom w-100">
+                        Login sebagai pelanggan untuk mengajukan resep
+                    </a>
+                @endauth
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Keranjang -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="cartPanel"
@@ -618,81 +727,6 @@ data-id="{{ $o->id_obat }}"
         renderCart();
     }
 
-   
-function renderCart() {
-    const cart = readCart();
-
-    const count = cart.reduce(
-        (sum, item) => sum + Number(item.qty || 0), 0
-    );
-
-    const total = cart.reduce(
-        (sum, item) =>
-            sum + Number(item.price || 0) * Number(item.qty || 0), 0
-    );
-
-    const countEl = document.getElementById('cartCount');
-    const totalEl = document.getElementById('cartTotal');
-    const itemsEl = document.getElementById('cartItems');
-    const summaryEl = document.getElementById('cartSummary');
-
-    if (!countEl || !totalEl || !itemsEl || !summaryEl) {
-        console.error('Elemen HTML keranjang tidak lengkap.');
-        return;
-    }
-
-    countEl.textContent = count;
-    totalEl.textContent = rupiah(total);
-
-    if (cart.length === 0) {
-        itemsEl.innerHTML = `
-            <div class="text-center py-5">
-                <i class="bi bi-bag display-4 muted"></i>
-                <h3 class="h6 fw-bold mt-3">Keranjang masih kosong</h3>
-                <p class="small muted">
-                    Pilih obat dari katalog terlebih dahulu.
-                </p>
-            </div>`;
-        summaryEl.classList.add('d-none');
-        return;
-    }
-
-    summaryEl.classList.remove('d-none');
-
-    itemsEl.innerHTML = cart.map(item => `
-        <div class="cart-item">
-            <div class="d-flex justify-content-between gap-2">
-                <div>
-                    <strong>${escapeHtml(item.name)}</strong>
-                    <div class="small muted">
-                        ${rupiah(item.price)} / ${escapeHtml(item.unit || '')}
-                    </div>
-                </div>
-                <button type="button"
-                    class="btn btn-sm btn-link text-danger remove-item"
-                    data-id="${Number(item.id)}">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center mt-2">
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary qty-change"
-                        data-id="${Number(item.id)}" data-change="-1">−</button>
-                    <button class="btn btn-light" disabled>
-                        ${Number(item.qty)}
-                    </button>
-                    <button class="btn btn-outline-secondary qty-change"
-                        data-id="${Number(item.id)}" data-change="1"
-                        ${Number(item.qty) >= Number(item.stock) ? 'disabled' : ''}>+</button>
-                </div>
-                <strong>${rupiah(Number(item.price) * Number(item.qty))}</strong>
-            </div>
-        </div>
-    `).join('');
-}
-
-
     function escapeHtml(value) {
         return String(value).replace(/[&<>"']/g, char => ({
             '&': '&amp;',
@@ -703,51 +737,120 @@ function renderCart() {
         })[char]);
     }
 
-    
-document.querySelectorAll('.add-to-cart').forEach(button => {
-    button.addEventListener('click', () => {
-        const id = Number(button.dataset.id);
-        const stock = Number(button.dataset.stock);
-        const price = Number(button.dataset.price);
+    function renderCart() {
         const cart = readCart();
-        const existing = cart.find(item => item.id === id);
 
-        if (stock < 1) {
-            alert('Stok obat sedang kosong.');
+        const count = cart.reduce(
+            (sum, item) => sum + Number(item.qty || 0), 0
+        );
+
+        const total = cart.reduce(
+            (sum, item) =>
+                sum + Number(item.price || 0) * Number(item.qty || 0), 0
+        );
+
+        const countEl = document.getElementById('cartCount');
+        const totalEl = document.getElementById('cartTotal');
+        const itemsEl = document.getElementById('cartItems');
+        const summaryEl = document.getElementById('cartSummary');
+
+        if (!countEl || !totalEl || !itemsEl || !summaryEl) {
+            console.error('Elemen HTML keranjang tidak lengkap.');
             return;
         }
 
-        if (existing) {
-            if (existing.qty >= stock) {
-                alert('Jumlah di keranjang sudah mencapai stok yang tersedia.');
+        countEl.textContent = count;
+        totalEl.textContent = rupiah(total);
+
+        if (cart.length === 0) {
+            itemsEl.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-bag display-4 muted"></i>
+                    <h3 class="h6 fw-bold mt-3">Keranjang masih kosong</h3>
+                    <p class="small muted">
+                        Pilih obat dari katalog terlebih dahulu.
+                    </p>
+                </div>`;
+            summaryEl.classList.add('d-none');
+            return;
+        }
+
+        summaryEl.classList.remove('d-none');
+
+        itemsEl.innerHTML = cart.map(item => `
+            <div class="cart-item">
+                <div class="d-flex justify-content-between gap-2">
+                    <div>
+                        <strong>${escapeHtml(item.name)}</strong>
+                        <div class="small muted">
+                            ${rupiah(item.price)} / ${escapeHtml(item.unit || '')}
+                        </div>
+                    </div>
+                    <button type="button"
+                        class="btn btn-sm btn-link text-danger remove-item"
+                        data-id="${Number(item.id)}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary qty-change"
+                            data-id="${Number(item.id)}" data-change="-1">−</button>
+                        <button class="btn btn-light" disabled>
+                            ${Number(item.qty)}
+                        </button>
+                        <button class="btn btn-outline-secondary qty-change"
+                            data-id="${Number(item.id)}" data-change="1"
+                            ${Number(item.qty) >= Number(item.stock) ? 'disabled' : ''}>+</button>
+                    </div>
+                    <strong>${rupiah(Number(item.price) * Number(item.qty))}</strong>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Tambah ke keranjang
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', () => {
+            const id = Number(button.dataset.id);
+            const stock = Number(button.dataset.stock);
+            const price = Number(button.dataset.price);
+            const cart = readCart();
+            const existing = cart.find(item => item.id === id);
+
+            if (stock < 1) {
+                alert('Stok obat sedang kosong.');
                 return;
             }
 
-            existing.qty++;
-        } else {
-            cart.push({
-                id: id,
-                name: button.dataset.name,
-                price: price,
-                stock: stock,
-                unit: button.dataset.unit,
-                qty: 1
-            });
-        }
+            if (existing) {
+                if (existing.qty >= stock) {
+                    alert('Jumlah di keranjang sudah mencapai stok yang tersedia.');
+                    return;
+                }
+                existing.qty++;
+            } else {
+                cart.push({
+                    id: id,
+                    name: button.dataset.name,
+                    price: price,
+                    stock: stock,
+                    unit: button.dataset.unit,
+                    qty: 1
+                });
+            }
 
-        saveCart(cart);
-        renderCart();
+            saveCart(cart);
 
-        button.innerHTML =
-            '<i class="bi bi-check2 me-1"></i> Ditambahkan';
-
-        setTimeout(() => {
-            button.innerHTML =
-                '<i class="bi bi-bag-plus me-1"></i> Tambah ke Keranjang';
-        }, 1000);
+            button.innerHTML = '<i class="bi bi-check2 me-1"></i> Ditambahkan';
+            setTimeout(() => {
+                button.innerHTML = '<i class="bi bi-bag-plus me-1"></i> Tambah ke Keranjang';
+            }, 1000);
+        });
     });
-});
 
+    // Ubah jumlah / hapus item
     document.getElementById('cartItems').addEventListener('click', event => {
         const removeButton = event.target.closest('.remove-item');
         const changeButton = event.target.closest('.qty-change');
@@ -778,46 +881,56 @@ document.querySelectorAll('.add-to-cart').forEach(button => {
         }
     });
 
-    
-document.getElementById('checkoutButton').addEventListener('click', () => {
-    const cart = readCart();
+    // Checkout: tutup keranjang dulu, baru buka modal data pelanggan
+    document.getElementById('checkoutButton').addEventListener('click', () => {
+        const cart = readCart();
 
-    if (!cart.length) {
-        alert('Keranjang masih kosong.');
-        return;
-    }
+        if (!cart.length) {
+            alert('Keranjang masih kosong.');
+            return;
+        }
 
-    const hiddenItems = document.getElementById('checkoutHiddenItems');
-    hiddenItems.innerHTML = '';
+        const hiddenItems = document.getElementById('checkoutHiddenItems');
+        hiddenItems.innerHTML = '';
 
-    cart.forEach((item, index) => {
-        const id = document.createElement('input');
-        id.type = 'hidden';
-        id.name = `items[${index}][id]`;
-        id.value = item.id;
+        cart.forEach((item, index) => {
+            const id = document.createElement('input');
+            id.type = 'hidden';
+            id.name = `items[${index}][id]`;
+            id.value = item.id;
 
-        const qty = document.createElement('input');
-        qty.type = 'hidden';
-        qty.name = `items[${index}][qty]`;
-        qty.value = item.qty;
+            const qty = document.createElement('input');
+            qty.type = 'hidden';
+            qty.name = `items[${index}][qty]`;
+            qty.value = item.qty;
 
-        hiddenItems.append(id, qty);
+            hiddenItems.append(id, qty);
+        });
+
+        const cartEl = document.getElementById('cartPanel');
+        const checkoutEl = document.getElementById('checkoutModal');
+        const openCheckout = () => bootstrap.Modal.getOrCreateInstance(checkoutEl).show();
+        const offcanvas = bootstrap.Offcanvas.getInstance(cartEl);
+
+        if (offcanvas && cartEl.classList.contains('show')) {
+            cartEl.addEventListener('hidden.bs.offcanvas', openCheckout, { once: true });
+            offcanvas.hide();
+        } else {
+            openCheckout();
+        }
     });
 
-    bootstrap.Modal.getOrCreateInstance(
-        document.getElementById('checkoutModal')
-    ).show();
-});
+    document.getElementById('checkoutForm').addEventListener('submit', () => {
+        const button = document.getElementById('submitCheckout');
+        button.disabled = true;
+        button.textContent = 'Memproses pesanan...';
+    });
 
-document.getElementById('checkoutForm').addEventListener('submit', () => {
-    const button = document.getElementById('submitCheckout');
-    button.disabled = true;
-    button.textContent = 'Memproses pesanan...';
-});
-
-
+    // Modal detail obat
     document.getElementById('detailModal').addEventListener('show.bs.modal', event => {
         const button = event.relatedTarget;
+        if (!button) return;
+
         document.getElementById('detailName').textContent = button.dataset.name;
         document.getElementById('detailCategory').textContent = button.dataset.category;
         document.getElementById('detailGolongan').textContent = button.dataset.golongan;
@@ -842,64 +955,35 @@ document.getElementById('checkoutForm').addEventListener('submit', () => {
             if (target) target.textContent = value || 'Belum ada informasi dari apoteker.';
             if (row) row.classList.remove('d-none');
         });
-        const infoContainer = document.getElementById('detailDescription').closest('.p-3');
-        infoContainer.classList.remove('d-none');
     });
 
-   document.getElementById('prescriptionModal').addEventListener('show.bs.modal', event => {
-    const tombol = event.relatedTarget;
-    document.getElementById('prescriptionName').textContent = tombol.dataset.name;
-    const idInput = document.getElementById('prescriptionId');
-    if (idInput) idInput.value = tombol.dataset.id;
-});
+    // Modal obat keras
+    const rxModal = document.getElementById('prescriptionModal');
+    if (rxModal) {
+        rxModal.addEventListener('show.bs.modal', event => {
+            const tombol = event.relatedTarget;
+            if (tombol) {
+                document.getElementById('prescriptionName').textContent = tombol.dataset.name;
+                const obatIdInput = document.getElementById('prescriptionObatId');
+                if (obatIdInput) obatIdInput.value = tombol.dataset.id;
+            }
+        });
+    }
+
+    @if($errors->any() && auth()->check() && auth()->user()->isPelanggan())
+        window.addEventListener('DOMContentLoaded', () => {
+            const trigger = Array.from(document.querySelectorAll('[data-prescription-trigger]'))
+                .find(button => button.dataset.id === @json((string) old('id_obat')));
+            if (trigger) bootstrap.Modal.getOrCreateInstance(rxModal).show();
+        });
+    @endif
+
     // Muat ulang saat halaman dipulihkan lewat tombol Back, supaya stok dan keranjang terbaru.
-window.addEventListener('pageshow', event => {
-    if (event.persisted) window.location.reload();
-});
+    window.addEventListener('pageshow', event => {
+        if (event.persisted) window.location.reload();
+    });
 
     renderCart();
-    
 </script>
-
-<!-- ================= FOOTER ================= -->
-<footer class="bg-white border-top py-4">
-    <div class="container">
-        <div class="row gy-4">
-            <!-- Col 1: Logo & Info Singkat -->
-            <div class="col-md-5">
-                <div class="d-flex align-items-center mb-2">
-                    <i class="bi bi-capsule-pill fs-3 text-pink me-2"></i>
-                    <h5 class="fw-bold mb-0 text-dark">SIMOFAR</h5>
-                </div>
-                <p class="text-muted small mb-2">
-                    Sistem Informasi Manajemen Obat &amp; Farmasi Terpadu untuk mengoptimalkan pengelolaan stok, resep, dan pengadaan obat secara akurat.
-                </p>
-                <small class="text-muted d-block">&copy; 2026 SIMOFAR. All Rights Reserved.</small>
-            </div>
-
-            <!-- Col 2: Kontak -->
-            <div class="col-md-4">
-                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-headset text-pink me-2"></i>Kontak Support &amp; Admin</h6>
-                <ul class="list-unstyled text-muted small lh-lg mb-0">
-                    <li><i class="bi bi-envelope me-2 text-pink"></i> admin.simofar@uin-malang.ac.id</li>
-                    <li><i class="bi bi-telephone me-2 text-pink"></i> +62 812-3456-7890 (Helpdesk)</li>
-                    <li><i class="bi bi-geo-alt me-2 text-pink"></i> Gedung Lab. Komputer, UIN Maulana Malik Ibrahim Malang</li>
-                </ul>
-            </div>
-
-            <!-- Col 3: Tim Pengembang -->
-            <div class="col-md-3">
-                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-code-slash text-pink me-2"></i>Tim Pengembang</h6>
-                <ul class="list-unstyled text-muted small lh-lg mb-0">
-                    <li><i class="bi bi-person-circle me-2 text-pink"></i> Najwarizqa Aryandri</li>
-                    <li><i class="bi bi-person-circle me-2 text-pink"></i> Aldza Salwatul</li>
-                    <li class="mt-1 text-pink fw-semibold"><i class="bi bi-building me-2"></i> UIN Maulana Malik Ibrahim Malang</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

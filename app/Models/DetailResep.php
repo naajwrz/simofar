@@ -29,6 +29,6 @@ class DetailResep extends Model
             Obat::class,
             'id_obat',
             'id_obat'
-        );
+        )->withTrashed();
     }
 }

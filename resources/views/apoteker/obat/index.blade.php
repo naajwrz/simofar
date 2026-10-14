@@ -103,9 +103,19 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-pink rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalEdit{{ $o->id_obat }}">
-                                    <i class="bi bi-pencil-square me-1"></i> Edit Stok/ED
-                                </button>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-sm btn-pink rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalEdit{{ $o->id_obat }}">
+                                        <i class="bi bi-pencil-square me-1"></i> Edit Stok/ED
+                                    </button>
+                                    <form action="{{ route('apoteker.obat.destroy', $o->id_obat) }}" method="POST"
+                                          onsubmit="return confirm('Hapus obat ini dari daftar? Riwayat transaksi tetap disimpan.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                            <i class="bi bi-trash me-1"></i> Hapus
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
 
